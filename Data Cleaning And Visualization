@@ -1,0 +1,265 @@
+#Hotel_Booking_analysis
+
+from google.colab import files
+uploaded = files.upload()
+
+#importing Libaries
+
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+#Loading the data set
+df=pd.read_csv("hotel_bookings 2.csv")
+
+#Exploratory Data and Cleaning
+
+#df.head() is a Pandas function used to display the first 5 rows of a DataFrame by default.
+
+
+df.head()
+
+#df.tail() is a Pandas function in Python used to display the last 5 rows of a DataFrame by default.
+
+df.tail()
+
+#df.shape is used to get the number of rows and columns in a Pandas DataFrame.
+df.shape
+
+df.columns
+
+df.info()
+
+#pd.to_datetime() → converts date values into proper date format.
+#dayfirst=True → tells Python the date format is DD-MM-YYYY or DD/MM/YYYY.
+
+df["reservation_status_date"]= pd.to_datetime(df["reservation_status_date"],dayfirst=True)
+
+df.info()
+
+#df.describe(include="object") is used in Pandas to show summary statistics for object (text/string) columns in a DataFrame.
+
+df.describe(include="object")
+
+#1. df.describe(include="object").columns
+#Gets all column names having object/string datatype.
+
+#2. for col in ...
+#Loops through each object column one by one.
+
+#3. print(col)
+#Prints the column name.
+
+#4. df[col].unique()
+#Shows all unique/distinct values in that column.
+
+#5. "*" * 50
+#Prints 50 stars for separation.
+
+
+
+for col in df.describe(include = "object").columns:
+  print(col)
+  print(df[col].unique())
+  print("*"*50)
+
+df.isnull().sum()
+
+#Removes the columns:
+#"company"
+#"agent"
+
+#axis=1 → means column operation
+#(axis=0 would mean rows)
+#inplace=True → changes the original DataFrame directly
+
+df.drop(["company", "agent"], axis=1, inplace=True)
+df.dropna(inplace=True)
+
+df.columns
+
+df.isnull().sum()
+
+df.describe()
+
+#DATA ANALYSIS AND VISUALIZATIONS
+
+df=df[df["adr"]<5000]
+
+#cancel percentage of hotel
+
+
+#value_counts() → counts values
+#normalize=True → converts counts into percentages
+
+
+cancelled_perc = df['is_canceled'].value_counts(normalize=True)
+print(cancelled_perc)
+
+plt.figure(figsize=(5, 3))
+plt.title('reservation status count')
+plt.bar(["Not canceled","Canceled"],df['is_canceled'].value_counts(),color=["green","red"])
+plt.show
+
+#Meaning:
+#x="hotel" → hotel types on X-axis
+#hue="is_canceled" → separates bars by cancellation status
+#data=df → dataset
+#palette="Blues" → blue color theme
+
+#This shows:
+
+#canceled bookings
+#non-canceled bookings
+#for each hotel.
+
+
+
+
+
+plt.figure(figsize = (8,4))
+ax1=sns.countplot(x = "hotel",hue="is_canceled",data=df,palette="Blues")
+legend_labels,_ = ax1.get_legend_handles_labels()
+ax1.legend(bbox_to_anchor=(1,1))
+plt.title("Reservation status in each hotel")
+plt.xlabel("Hotel")
+plt.ylabel("Number of reservations")
+plt.show
+
+#value_counts() → counts values
+#normalize=True → converts counts into percentage/proportion
+
+resort_hotel=df[df["hotel"]=='Resort Hotel']
+resort_hotel["is_canceled"].value_counts(normalize=True)
+
+city_hotel = df[df["hotel"]=='City Hotel']
+city_hotel["is_canceled"].value_counts(normalize=True)
+
+#This code groups the Resort Hotel data by date and calculates the average ADR (Average Daily Rate) for each date.
+#Groups rows based on reservation status date.
+
+resort_hotel = resort_hotel.groupby("reservation_status_date")[["adr"]].mean()
+city_hotel = city_hotel.groupby("reservation_status_date")[["adr"]].mean()
+
+#Comparison between City & Resort hotels
+#Which hotel type has higher ADR over time
+
+#| Code                          | Meaning              |
+#| ----------------------------- | -------------------- |
+#| `plt.figure(figsize=(20,10))` | Creates large graph  |
+#| `plt.title()`                 | Adds graph title     |
+#| `plt.plot()`                  | Draws line graph     |
+#| `resort_hotel.index`          | Dates on X-axis      |
+#| `resort_hotel["adr"]`         | ADR values on Y-axis |
+#| `label=`                      | Name shown in legend |
+#| `plt.legend()`                | Displays legend      |
+#| `plt.show()`                  | Displays graph       |
+
+
+
+plt.figure(figsize=(20,10))
+plt.title("Average Daily Rate in City and Resort Hotel",fontsize=30)
+plt.plot(resort_hotel.index,resort_hotel["adr"],label="Resort Hotel")
+plt.plot(city_hotel.index,city_hotel["adr"],label="City Hotel")
+plt.legend(fontsize=20)
+plt.show
+
+#x="month" → months on X-axis
+#hue="is_canceled" → separate bars by cancellation status
+#palette="bright" → colorful bars
+
+#You can analyze:
+
+#which month has highest cancellations
+#seasonal booking trends
+#busy tourism months
+#cancellation behavior over time
+
+
+
+
+
+
+df["month"]=df["reservation_status_date"].dt.month
+plt.figure(figsize = (16,8))
+ax1=sns.countplot(x = "month",hue="is_canceled",data=df,palette="bright")
+legend_labels,_ = ax1.get_legend_handles_labels()
+ax1.legend(bbox_to_anchor=(1,1))
+plt.title("Reservation status in each month")
+plt.xlabel("Month")
+plt.ylabel("Number of reservations")
+plt.legend(["Not canceled","Canceled"])
+plt.show
+
+#You can identify:
+#months with highest canceled booking revenue
+#seasonal cancellation trends
+#peak loss periods for hotels
+
+#df[df["is_canceled"] == 1]
+#Keeps only canceled reservations.
+
+
+#.groupby("month")
+#Groups data month-wise.
+
+#[["adr"]]
+#Chooses only ADR values.
+#.sum()
+#Calculates total ADR for each month.
+
+#.reset_index()
+#Converts grouped index back into normal columns.
+
+#sns.barplot(x="month", y="adr", data=...)
+#X-axis → month
+#Y-axis → total ADR
+
+
+
+plt.figure(figsize = (16,8))
+plt.title("ADR per month", fontsize=30)
+sns.barplot(x="month",y="adr",data=df[df["is_canceled"]==1].groupby("month")[["adr"]].sum().reset_index())
+plt.show
+
+#cancelled_data = df[df["is_canceled"] == 1]
+#Keeps only rows where booking was canceled.
+
+#value_counts() → counts reservations country-wise
+#[:10] → selects top 10 countries
+
+
+#top_10_country → values/sizes of pie slices
+#labels= → country names
+#autopct="%.2f" → shows percentage with 2 decimal places
+
+
+
+cancelled_data = df[df["is_canceled"] == 1]
+top_10_country=cancelled_data["country"].value_counts()[:10]
+plt.figure(figsize=(10,5))
+plt.title("Top 10 countries with canceled reservations")
+plt.pie(top_10_country,autopct="%.2f",labels=top_10_country.index)
+plt.show()
+
+df["market_segment"].value_counts()
+
+df["market_segment"].value_counts(normalize=True)
+
+cancelled_data["market_segment"].value_counts(normalize=True)
+
+cancelled_df_adr = cancelled_data.groupby("reservation_status_date")[["adr"]].mean()
+cancelled_df_adr.reset_index(inplace=True)
+cancelled_df_adr.sort_values("reservation_status_date",inplace=True)
+
+
+not_cancelled_data = df[df["is_canceled"] == 0]
+not_cancelled_df_adr =not_cancelled_data.groupby("reservation_status_date")[["adr"]].mean()
+not_cancelled_df_adr.reset_index(inplace=True)
+not_cancelled_df_adr.sort_values("reservation_status_date",inplace=True)
+
+plt.figure(figsize=(20,10))
+plt.title("Average Daily Rate")
+plt.plot(not_cancelled_df_adr["reservation_status_date"],not_cancelled_df_adr["adr"],label="Not canceled")
+plt.plot(cancelled_df_adr["reservation_status_date"],cancelled_df_adr["adr"],label="Canceled")
+plt
